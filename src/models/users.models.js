@@ -1,3 +1,5 @@
+const ObjectId = require('mongodb').ObjectID;
+
 let users;
 
 class UsersModels {
@@ -45,6 +47,25 @@ class UsersModels {
       return { sucess: true };
     } catch (e) {
       console.error(`Ocorreu para cadastrar o usuario, ${e} `);
+      return e;
+    }
+  }
+
+  static async getUser(idUser) {
+    try {
+      return users.findOne({ _id: ObjectId(idUser) });
+    } catch (e) {
+      console.error(`Ocorreu um erro para buscar o usuario , ${e} `);
+      return e;
+    }
+  }
+
+  static async alterUser(idUser, infoUsers) {
+    try {
+      await users.updateOne({ _id: ObjectId(idUser) }, { $set: infoUsers });
+      return { sucess: true };
+    } catch (e) {
+      console.error(`Ocorreu um erro para alterar o usuario , ${e} `);
       return e;
     }
   }
