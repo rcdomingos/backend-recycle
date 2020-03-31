@@ -5,6 +5,8 @@ const MongoClient = require('mongodb').MongoClient;
 /**local require */
 const UsersModels = require('./src/models/users.models');
 const UsersRoutes = require('./src/routes/users.routes');
+const ArticleModels = require('./src/models/articles.models');
+const ArticleRoutes = require('./src/routes/articles.routes');
 
 const app = express();
 
@@ -14,6 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/users', UsersRoutes);
+app.use('/api/v1/articles', ArticleRoutes);
 
 // const uri =
 //   'mongodb+srv://recycle:recycle2020@sandbox-a2uhg.mongodb.net/test?retryWrites=true&w=majority';
@@ -35,6 +38,7 @@ client
     console.log(`Conectado no banco db recycle`);
 
     await UsersModels.conectCollection(db);
+    await ArticleModels.conectCollection(db);
 
     /**starta a aplicação */
     app.listen(port, () => {
