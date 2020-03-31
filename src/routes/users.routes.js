@@ -1,16 +1,20 @@
 const express = require('express');
 const routes = express.Router();
 
-const UsersController = require('../controllers/users.controller');
+const authentication = require('../middlewares/authentication');
+
+const { UsersController } = require('../controllers/users.controller');
 
 /**rotas apartir do '/api/v1/users' */
 routes.get('/', UsersController.apiGetAllUsers);
 
-routes.get('/:id', UsersController.apiGetUsers);
+routes.post('/create-auth', UsersController.apiCreateAuth);
 
-routes.put('/:id', UsersController.apiAlterUser);
+routes.get('/:id', authentication, UsersController.apiGetUser);
 
-routes.delete('/:id', UsersController.apiDeleteUser);
+routes.put('/:id', authentication, UsersController.apiAlterUser);
+
+routes.delete('/:id', authentication, UsersController.apiDeleteUser);
 
 routes.post('/', UsersController.apiAddUser);
 

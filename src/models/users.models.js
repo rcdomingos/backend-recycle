@@ -1,18 +1,20 @@
 const ObjectId = require('mongodb').ObjectID;
 
 let users;
+let sessions;
 
 class UsersModels {
   /**Metodo para conecatar na coleção usuario */
   static async conectCollection(conn) {
-    if (users) {
+    if (users && sessions) {
       return;
     }
 
     try {
       users = await conn.collection('users');
+      sessions = await conn.collection('sessions');
 
-      console.log(`Conectado na coleção Users`);
+      console.log(`Conectado na coleção Users e Sessions`);
     } catch (e) {
       console.error(`Falha para conectar com a coleção users: ${e} `);
     }
@@ -39,7 +41,8 @@ class UsersModels {
       return { userList: [], totalNumUser: 0 };
     }
   }
-  /**Metodo para adicionar o usuario no banco */
+
+  /**Metodo para inserir o usuario no banco */
   static async addUser(infoUsers) {
     try {
       await users.insertOne(infoUsers);
@@ -47,26 +50,74 @@ class UsersModels {
       return { sucess: true };
     } catch (e) {
       console.error(`Ocorreu para cadastrar o usuario, ${e} `);
-      return e;
+      return {
+        error: `Ocorreu um erro para buscar o usuario`,
+        description: `${e} `
+      };
     }
   }
 
+  /**metodo para buscar um usuario pelo ID no banco */
   static async getUser(idUser) {
     try {
-      return users.findOne({ _id: ObjectId(idUser) });
+      return await users.findOne({ _id: ObjectId(idUser) });
     } catch (e) {
-      console.error(`Ocorreu um erro para buscar o usuario , ${e} `);
+      console.error(`Ocorreu um erro para buscar o usuario, ${e} `);
+      return {
+        error: `Ocorreu um erro para buscar o usuario`,
+        description: `${e} `
+      };
+    }
+  }
+
+  /**Metodo pala buscar um usuario pelo email no banco */
+  static async getUserFromEmail(email) {
+    try {
+      return users.findOne({ email: email });
+    } catch (e) {
+      console.error(`Ocorreu um erro para buscar o usuario, ${e} `);
       return e;
     }
   }
 
+  /**metodo para alterar o usuario no banco */
   static async alterUser(idUser, infoUsers) {
     try {
-      await users.updateOne({ _id: ObjectId(idUser) }, { $set: infoUsers });
-      return { sucess: true };
+      const resultupdate = await users.updateOne(
+        { _id: ObjectId(idUser) },
+        { $set: infoUsers }
+      );
+      // console.log(resultupdate);
+      // return { sucess: true };
+
+      return resultupdate;
     } catch (e) {
       console.error(`Ocorreu um erro para alterar o usuario , ${e} `);
       return e;
+    }
+  }
+
+  /**metodo para inserir o token de acesso na tabela sessim */
+  static async addSession(idUser, jwt) {
+    try {
+      let infoSession = {
+        user_id: idUser,
+        jwt: jwt,
+        created_at: new Date()
+      };
+
+      const resultUpdate = await sessions.updateOne(
+        { user_id: idUser },
+        { $set: infoSession },
+        { upsert: true }
+      );
+      // if (!resultUpdate.modifiedCount || resultUpdate.upsertedCount ) {
+      //   return { error: 'Não foi possivel alterar os dados' };
+      // }
+      return { sucess: true };
+    } catch (e) {
+      console.error(`Ocorreu um erro para criar a session, ${e} `);
+      return { error: `Ocorreu um erro para criar a session, ${e} ` };
     }
   }
 }

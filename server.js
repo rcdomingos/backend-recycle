@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const MongoClient = require('mongodb').MongoClient;
 
+/**local require */
 const UsersModels = require('./src/models/users.models');
 const UsersRoutes = require('./src/routes/users.routes');
 
@@ -13,10 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/users', UsersRoutes);
 
-const uri =
-  'mongodb+srv://recycle:recycle2020@sandbox-a2uhg.mongodb.net/test?retryWrites=true&w=majority';
+// const uri =
+//   'mongodb+srv://recycle:recycle2020@sandbox-a2uhg.mongodb.net/test?retryWrites=true&w=majority';
 
-const client = new MongoClient(uri, {
+const client = new MongoClient(process.env.DB_MONGO, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
