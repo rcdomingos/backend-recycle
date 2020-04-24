@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const MongoClient = require('mongodb').MongoClient;
+const logger = require('./utils/winston');
 
 /**local require */
 const UsersModels = require('./src/models/users.models');
@@ -23,26 +24,29 @@ app.use('/api/v1/articles', ArticleRoutes);
 
 const client = new MongoClient(process.env.DB_MONGO, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 });
 
 client
   .connect()
-  .catch(err => {
+  .catch((err) => {
     console.error(err.stack);
     process.exit(1);
   })
-  .then(async client => {
+  .then(async (client) => {
     /**Conecta na database  */
     const db = client.db('recycle');
-    console.log(`Conectado no banco db recycle`);
+    logger.info(`Conectado no banco db recycle`);
+    logger.debug('teste de debug');
 
     await UsersModels.conectCollection(db);
     await ArticleModels.conectCollection(db);
 
     /**starta a aplicação */
     app.listen(port, () => {
-      console.log(`Servidor On na porta ${port} `);
+      logger.info(`O servidor foi iniciado na porta ${port}`, {
+        label: 'Express',
+      });
     });
   });
 
