@@ -95,8 +95,9 @@ class CollectorModels {
   static async getStatusPreCollector(userId) {
     try {
       return await preCollector
-        .findOne({ user_id: ObjectId(userId) })
-        .project({ user_id: 1, status: 1, _id: 0 });
+        .find({ user_id: ObjectId(userId) })
+        .project({ user_id: 1, status: 1, _id: 0 })
+        .toArray();
     } catch (e) {
       logger.error(e, { label: 'MongoDb' });
       return {

@@ -1,9 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const UsersModels = require('../models/users.models');
+const logger = require('../../utils/winston');
 
 /**função para criptografar a senha do usuario */
-const hashPassword = password => bcrypt.hash(password, 10);
+const hashPassword = (password) => bcrypt.hash(password, 10);
 
 class User {
   constructor({ _id, name, email, password } = {}) {
@@ -17,7 +18,7 @@ class User {
     return {
       user_id: this.user_id,
       name: this.name,
-      email: this.email
+      email: this.email,
     };
   }
 
@@ -27,7 +28,7 @@ class User {
 
   createJwsToken() {
     return jwt.sign({ ...this.toJsonRes() }, process.env.PRIVATE_KEY, {
-      expiresIn: '1d'
+      expiresIn: '365d',
     });
   }
 
@@ -35,32 +36,55 @@ class User {
   //   return jwt.verify(jwtoken, process.env.PRIVATE_KEY, (error, res) => {});
   // }
 }
-
-/**Classe UserController com as chamadas para os models de usuario */
+/**
+ * Classe UserController com as chamadas para os models de usuario
+ **/
 class UsersController {
-  /**Metodo para listar todos os usuarios cadastrados */
+  /**
+   * Metodo para listar todos os usuarios cadastrados
+   */
   static async apiGetAllUsers(req, res) {
-    const { userList, totalNumUser } = await UsersModels.getAllUsers();
+    try {
+      let page = parseInt(req.query.page || 1);
+      let limit = parseInt(req.query.limit || 10);
 
-    let response = {
-      users: userList,
-      total_results: totalNumUser,
-      page: 0
-    };
+      const { userList, totalNumUser, count } = await UsersModels.getAllUsers(
+        page,
+        limit
+      );
 
-    res.json(response);
+      let response = {
+        results: userList,
+        total_results: totalNumUser,
+        page,
+        count,
+        limit,
+      };
+
+      res.json(response);
+    } catch (e) {
+      logger.error(`${e}`);
+      res.status(500).json({
+        code: 500,
+        message: `Erro interno, por favor tente mas tarde`,
+        description: `${e}`,
+      });
+    }
   }
 
-  /**Metodo para adicionar um usuario  */
+  /**
+   * Metodo utilizado para adicionar um novo usuario
+   **/
   static async apiAddUser(req, res) {
     try {
       let errors = {};
-      const userFromBody = req.body;
+      let userFromBody = req.body;
 
       /**validações do form */
       if (userFromBody.password.length < 8) {
-        errors.status = 'Falha';
-        errors.message = `A senha precisa ser maior que 8 digitos`;
+        errors.code = 400;
+        errors.message = `Informações fora do padrão`;
+        errors.description = `A senha precisa ser maior que 8 digitos`;
       }
 
       if (Object.keys(errors).length > 0) {
@@ -70,14 +94,16 @@ class UsersController {
 
       const userInfo = {
         ...userFromBody,
-        password: await hashPassword(userFromBody.password)
+        is_collector: false,
+        is_admin: false,
+        password: await hashPassword(userFromBody.password),
       };
 
       const insertResult = await UsersModels.addUser(userInfo);
 
       if (!insertResult.sucess) {
-        errors.status = 'Falha';
-        errors.message = 'Erro interno, por favor tente mas tarde';
+        errors.message = insertResult.error;
+        errors.description = insertResult.description;
       }
 
       if (Object.keys(errors).length > 0) {
@@ -86,12 +112,17 @@ class UsersController {
       }
 
       res.status(201).json({
-        status: 'Sucesso',
-        auth_token: 'Hash Token'
+        code: 201,
+        message: `Sucesso`,
+        description: `Cadastro realizado com sucesso`,
       });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ error: `${e}` });
+      logger.error(`${e}`);
+      res.status(500).json({
+        code: 500,
+        message: `Erro interno, por favor tente mas tarde`,
+        description: `${e}`,
+      });
     }
   }
 
@@ -105,7 +136,7 @@ class UsersController {
         res.status(401).json({
           code: 401,
           message: 'Não Autorizada',
-          description: `As informações de autenticação necessárias estão ausentes ou não são válidas para o recurso.`
+          description: `As informações de autenticação necessárias estão ausentes ou não são válidas para o recurso.`,
         });
         return;
       }
@@ -117,7 +148,7 @@ class UsersController {
           code: 404,
           message: 'O recurso solicitado não existe',
           description:
-            'O recurso solicitado não foi localizado em nossa base de dados'
+            'O recurso solicitado não foi localizado em nossa base de dados',
         });
         return;
       }
@@ -126,22 +157,17 @@ class UsersController {
         res.status(500).json({
           code: 500,
           message: resultFindUser.error,
-          description: resultFindUser.description
+          description: resultFindUser.description,
         });
         return;
       }
 
-      const user = new User(resultFindUser);
-
-      res.status(200).json({
-        status: 'sucess',
-        info: user.toJsonRes()
-      });
+      res.status(200).json(resultFindUser);
     } catch (e) {
       res.status(500).json({
         code: 500,
         message: `Erro interno, por favor tente mas tarde`,
-        description: `${e}`
+        description: `${e}`,
       });
     }
   }
@@ -160,7 +186,7 @@ class UsersController {
         res.status(400).json({
           code: 400,
           message: `Erro interno, por favor tente mas tarde`,
-          description: `${error}`
+          description: `${error}`,
         });
         return;
       }
@@ -169,7 +195,7 @@ class UsersController {
         res.status(200).json({
           code: 200,
           message: 'Não foram realizadas nenhuma mudança no usuario',
-          description: 'Não foram realizadas nenhuma mudança no usuario'
+          description: 'Não foram realizadas nenhuma mudança no usuario',
         });
         return;
       }
@@ -178,17 +204,21 @@ class UsersController {
         res.status(404).json({
           code: 404,
           message: 'O recurso solicitado não existe',
-          description: 'O recurso solicitado não existe'
+          description: 'O recurso solicitado não existe',
         });
         return;
       }
 
       res.status(200).json({
-        status: 'Sucesso'
+        status: 'Sucesso',
       });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ error: `${e}` });
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: `Erro interno, por favor tente mas tarde`,
+        description: `${e}`,
+      });
     }
   }
 
@@ -210,11 +240,15 @@ class UsersController {
       }
 
       res.status(200).json({
-        status: 'Sucesso'
+        status: 'Sucesso',
       });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ error: `${e}` });
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: `Erro interno, por favor tente mas tarde`,
+        description: `${e}`,
+      });
     }
   }
   //TODO: incluir as regras e validações do email
@@ -226,8 +260,13 @@ class UsersController {
 
       /**validações do form */
       if (email.length < 8) {
-        errors.status = 'Falha';
-        errors.message = `Validar se o email esta correto`;
+        errors = [
+          {
+            code: 400,
+            message: `Algumas informações enviadas estão fora do padrão`,
+            description: `O email digitado não esta de acordo com os padrões`,
+          },
+        ];
       }
 
       if (Object.keys(errors).length > 0) {
@@ -238,9 +277,11 @@ class UsersController {
       const userFromDb = await UsersModels.getUserFromEmail(email);
 
       if (!userFromDb) {
-        res
-          .status(401)
-          .json({ error: 'Verifique se o email digitado esta correto' });
+        res.status(401).json({
+          code: 401,
+          message: `E-mail não locarizado`,
+          description: `Verifique se o email digitado esta correto`,
+        });
         return;
       }
 
@@ -250,9 +291,11 @@ class UsersController {
       const login = await user.comparePassword(password); //return true or false
 
       if (!login) {
-        res
-          .status(401)
-          .json({ error: 'Verifique se a senha digitada esta correta' });
+        res.status(401).json({
+          code: 401,
+          message: `Senha não confere`,
+          description: `Verifique se a senha digitada esta correta`,
+        });
         return;
       }
 
@@ -272,16 +315,82 @@ class UsersController {
       }
 
       res.status(201).json({
-        status: 'Sucesso',
+        code: 201,
         user_info: user.toJsonRes(),
-        auth_token: user.createJwsToken()
+        auth_token: user.createJwsToken(),
       });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ error: `${e}` });
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: `Erro interno, por favor tente mas tarde`,
+        description: `${e}`,
+      });
     }
+  }
+  static async apiAddUserAddress(req, res) {
+    //   {
+    //     "street": "Rua Leopoldo Couto de Magalhães Jr.",
+    //     "number": "700",
+    //     "neighborhood": "Itaim Bibi",
+    //     "complement": "7° andar",
+    //     "city": "São Paulo",
+    //     "state": "SP"
+    // }
 
-    // const login = await user.comparePassord(password);
+    try {
+      const userId = req.params.id;
+      const userAddress = req.body;
+
+      const addressResult = await UsersModels.addUserAdress(
+        userId,
+        userAddress
+      );
+
+      if (!addressResult.sucess) {
+        res.status(500).json({
+          code: 500,
+          message: 'Erro interno, por favor tente mas tarde',
+          description: addressResult.error,
+        });
+      }
+
+      res.status(200).json({
+        status: 'Sucesso',
+      });
+    } catch (e) {
+      res.status(500).json({
+        code: 500,
+        message: 'Erro interno, por favor tente mas tarde',
+        description: `${e}`,
+      });
+    }
+  }
+  static async apiGetAllUserAddress(req, res) {
+    try {
+      const userId = req.params.id;
+      const codAddress = req.params.codAddress;
+
+      const { adressResult } = await UsersModels.getUserAdress(
+        userId,
+        codAddress
+      );
+
+      let response = {
+        results: adressResult[1],
+        total_results: 1,
+        page: 0,
+      };
+
+      res.status(200).json(adressResult[0]);
+    } catch (e) {
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: 'Erro interno, por favor tente mas tarde',
+        description: `${e}`,
+      });
+    }
   }
 }
 

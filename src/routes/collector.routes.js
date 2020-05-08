@@ -14,6 +14,6 @@ routes.delete('/:id', CollectorController.apiDeletePreCollector);
 
 routes.get('/:id/status', CollectorController.apiGetStatusPreCollector);
 
-routes.patch('/:id/status', CollectorController.apiAlterStatusPreCollector);
+routes.put('/:id/status', CollectorController.apiAlterStatusPreCollector);
 
 module.exports = routes;
