@@ -41,8 +41,8 @@ class CollectorController {
    */
   static async apiAddCollector(req, res) {
     try {
-      const userIdJWT = '5e72e4dcd4f6b3164bbea455';
-      const userNameJWT = 'Fulano de Tal';
+      const userIdJWT = req.userJwt.user_id;
+      const userNameJWT = req.userJwt.name;
       const collectedCities = req.body.collectedCities;
       const collectedNeighbourhood = req.body.collectedNeighbourhood;
       const vehicle = req.body.vehicle;

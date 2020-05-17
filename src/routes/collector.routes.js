@@ -6,14 +6,26 @@ const authentication = require('../middlewares/authentication');
 const CollectorController = require('../controllers/collector.controller');
 
 /**rotas apartir do '/api/v1/collectors' */
-routes.post('/', CollectorController.apiAddCollector);
+routes.post('/', authentication, CollectorController.apiAddCollector);
 
-routes.get('/', CollectorController.apiGetAllPreCollector);
+routes.get('/', authentication, CollectorController.apiGetAllPreCollector);
 
-routes.delete('/:id', CollectorController.apiDeletePreCollector);
+routes.delete(
+  '/:id',
+  authentication,
+  CollectorController.apiDeletePreCollector
+);
 
-routes.get('/:id/status', CollectorController.apiGetStatusPreCollector);
+routes.get(
+  '/:id/status',
+  authentication,
+  CollectorController.apiGetStatusPreCollector
+);
 
-routes.put('/:id/status', CollectorController.apiAlterStatusPreCollector);
+routes.put(
+  '/:id/status',
+  authentication,
+  CollectorController.apiAlterStatusPreCollector
+);
 
 module.exports = routes;

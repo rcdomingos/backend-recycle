@@ -172,7 +172,9 @@ class UsersController {
     }
   }
 
-  /**Metodo para alterar um usuario especifico */
+  /**
+   * Metodo para alterar um usuario especifico
+   */
   static async apiAlterUser(req, res) {
     try {
       let id_user = req.params.id;
@@ -222,7 +224,9 @@ class UsersController {
     }
   }
 
-  /**Metodo para deletar um usuario */
+  /**
+   * Metodo para deletar um usuario
+   */
   static async apiDeleteUser(req, res) {
     let id_user = req.params.id;
     let userInfoDelete = {};
@@ -252,7 +256,9 @@ class UsersController {
     }
   }
   //TODO: incluir as regras e validações do email
-  /**Metodo para gerar um Token de autenticação para o client */
+  /**
+   * Metodo para gerar um Token de autenticação para o client
+   * */
   static async apiCreateAuth(req, res) {
     try {
       let errors = {};
@@ -328,6 +334,10 @@ class UsersController {
       });
     }
   }
+
+  /**
+   * Metodo para adicionar o endereço do usuario
+   */
   static async apiAddUserAddress(req, res) {
     //   {
     //     "street": "Rua Leopoldo Couto de Magalhães Jr.",
@@ -366,6 +376,10 @@ class UsersController {
       });
     }
   }
+
+  /**
+   *  Metodo para listar todos os endereços dos usuario
+   */
   static async apiGetAllUserAddress(req, res) {
     try {
       const userId = req.params.id;
@@ -377,12 +391,12 @@ class UsersController {
       );
 
       let response = {
-        results: adressResult[1],
+        results: adressResult,
         total_results: 1,
         page: 0,
       };
 
-      res.status(200).json(adressResult[0]);
+      res.status(200).json(response);
     } catch (e) {
       logger.error(e, { label: 'Express' });
       res.status(500).json({
@@ -395,8 +409,3 @@ class UsersController {
 }
 
 module.exports = { UsersController, User };
-
-// db.reci.uses.updadetOne({id:crear},{$set:{ } })
-
-//TODO: ajustar os endereço dos usuarios (criar, aterar e defalt)
-//TODO: verificar os dados para coletor ex: bairros, veiculo, horario
