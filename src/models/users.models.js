@@ -1,6 +1,8 @@
 const ObjectId = require('mongodb').ObjectID;
 const logger = require('../../utils/winston');
 
+const dataCleaning = require('../../utils/dataCleaning');
+
 let users;
 let sessions;
 
@@ -72,21 +74,32 @@ class UsersModels {
       logger.error(`Erro ao executar o comando insertOne, ${e}`, {
         label: 'MongoDb',
       });
+
+      /** erro se o email ja existir */
+      if (String(e).startsWith('MongoError: E11000 duplicate key error')) {
+        return {
+          error: 'Ja existe um usuario com o email informado.',
+          description: 'O email utilizado ja esta cadastrado na base de dados',
+        };
+      }
       return {
         error: `Ocorreu um erro para Cadastrar o usuario`,
         description: `${e}`,
       };
     }
   }
+
   /**
    * Metodo para buscar um usuario pelo ID no banco
    **/
-  static async getUser(idUser) {
+  static async getUser(userId) {
     try {
-      return await users
-        .find({ _id: ObjectId(idUser) })
+      const resultFind = await users
+        .find({ _id: ObjectId(userId) })
         .project({ password: 0 })
         .toArray();
+
+      return resultFind[0];
     } catch (e) {
       logger.error(`${e}`, { label: 'MongoDb' });
       return {
@@ -112,6 +125,7 @@ class UsersModels {
       };
     }
   }
+
   /**
    * Metodo para alterar as informações so usuario no banco
    */
@@ -166,11 +180,53 @@ class UsersModels {
   /**
    * Metodo para adicionar o endereço no banco
    */
-  static async addUserAdress(userId, address) {
+  static async addUserAdress(userId, userAddress) {
+    let cod_address = 0;
     try {
+      const resultQuery = await users
+        .aggregate([
+          {
+            $match: {
+              _id: ObjectId(userId),
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              numberOfAdress: {
+                $cond: {
+                  if: { $isArray: '$addresses' },
+                  then: { $size: '$addresses' },
+                  else: '0',
+                },
+              },
+            },
+          },
+        ])
+        .toArray();
+
+      cod_address = parseInt(resultQuery[0].numberOfAdress) + 1;
+    } catch (e) {
+      logger.error(`Erro ao executar o comando aggregate, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para buscar a quantidade de endereços.`,
+        description: `${e}`,
+      };
+    }
+
+    // console.log(address);
+    // return { sucess: true };
+    try {
+      const address = {
+        cod_address: cod_address,
+        ...userAddress,
+      };
+
       const userAddressUpdate = await users.updateOne(
         { _id: ObjectId(userId) },
-        { $push: { address: address } }
+        { $push: { addresses: address } }
       );
 
       if (userAddressUpdate.modifiedCount || userAddressUpdate.upsertedCount) {
@@ -192,15 +248,22 @@ class UsersModels {
   /**
    * Metodo para buscar os endereços cadastrados do usuario no banco
    */
-
-  static async getUserAdress(userId, codAdress = 1) {
+  static async getUserAdress(userId, codAdress = 0) {
     let projection = {};
-    // projection = {
-    //   address: { $arrayElemAt: ['$address', adressPosition] }
-    // };
-
     try {
       let adressPosition = codAdress > 0 ? codAdress - 1 : 0;
+
+      if (codAdress === 0) {
+        projection = {
+          _id: 0,
+          addresses: 1,
+        };
+      } else {
+        projection = {
+          _id: 0,
+          addresses: { $arrayElemAt: ['$addresses', adressPosition] },
+        };
+      }
 
       const resultQuery = await users.aggregate([
         {
@@ -209,15 +272,13 @@ class UsersModels {
           },
         },
         {
-          $project: {
-            _id: 0,
-            address: { $arrayElemAt: ['$address', adressPosition] },
-          },
+          $project: projection,
         },
       ]);
 
-      let adressResult = await resultQuery.toArray();
-      console.log(adressResult);
+      let resultFind = await resultQuery.toArray();
+
+      let adressResult = resultFind[0];
 
       return { adressResult };
     } catch (e) {
@@ -226,6 +287,86 @@ class UsersModels {
       });
       return {
         error: `Ocorreu um erro para listar os endereços`,
+        description: `${e}`,
+      };
+    }
+  }
+
+  /**
+   * Metodo para alterar o endereço do usuario no banco
+   */
+  static async alterAddress(userId, codAdress, dataAdress) {
+    let adressPosition = codAdress > 0 ? codAdress - 1 : 0;
+    let addresses = {};
+    let icodAdress = parseInt(codAdress);
+
+    try {
+      addresses = {
+        'addresses.$[address].street': dataAdress.street || undefined,
+        'addresses.$[address].number': dataAdress.number || undefined,
+        'addresses.$[address].neighborhood':
+          dataAdress.neighborhood || undefined,
+        'addresses.$[address].complement': dataAdress.complement || undefined,
+        'addresses.$[address].city': dataAdress.city || undefined,
+        'addresses.$[address].state': dataAdress.state || undefined,
+        'addresses.$[address].zip_code': dataAdress.zip_code || undefined,
+      };
+      //remover os campos undefined para não ficar null
+      addresses = await dataCleaning(addresses);
+    } catch (e) {
+      {
+        logger.error(`Erro ao montar os dados, ${e}`, { label: 'MongoDb' });
+        return {
+          error: `Ocorreu um erro para normalizar os dados para alteração.`,
+          description: `${e}`,
+        };
+      }
+    }
+
+    try {
+      const resultUpdate = await users.findOneAndUpdate(
+        { _id: ObjectId(userId) },
+        { $set: addresses },
+        {
+          arrayFilters: [{ 'address.cod_address': icodAdress }],
+          upsert: true,
+          projection: { addresses: 1 },
+          returnNewDocument: true,
+          returnOriginal: false,
+        }
+      );
+      //retornar o endereço alterado
+      return resultUpdate.value.addresses;
+    } catch (e) {
+      logger.error(`Erro ao executar o comando aggregate, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para listar os endereços`,
+        description: `${e}`,
+      };
+    }
+  }
+
+  /**
+   * Metodo para deletar o endereço do banco
+   */
+  static async deleteUserAddress(userId, codAdress) {
+    try {
+      const icodAdress = parseInt(codAdress);
+
+      const resultUpdate = await users.updateOne(
+        { _id: ObjectId(userId) },
+        { $pull: { addresses: { cod_address: icodAdress } } }
+      );
+
+      return resultUpdate.modifiedCount;
+    } catch (e) {
+      logger.error(`Erro ao executar o comando delete, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para excluir o endereço`,
         description: `${e}`,
       };
     }

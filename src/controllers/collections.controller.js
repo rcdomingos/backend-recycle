@@ -1,6 +1,7 @@
 const logger = require('../../utils/winston');
 const CollectModel = require('../models/collections.models');
 const ObjectId = require('mongodb').ObjectID;
+const dataCleaning = require('../../utils/dataCleaning');
 
 /**Função para gerar o status do cadastro */
 const createStatusCollect = (code) => {
@@ -28,15 +29,6 @@ const createStatusCollect = (code) => {
     code: parseInt(code),
     description: description,
   };
-};
-
-/**Função para remover os campos vazios do objeto */
-const dataCleaning = (obj) => {
-  Object.keys(obj).forEach((key) => {
-    if (obj[key] && typeof obj[key] === 'object') dataCleaning(obj[key]);
-    else if (obj[key] === undefined) delete obj[key];
-  });
-  return obj;
 };
 
 class CollectController {

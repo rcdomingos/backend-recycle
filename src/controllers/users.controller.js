@@ -81,10 +81,10 @@ class UsersController {
       let userFromBody = req.body;
 
       /**validações do form */
-      if (userFromBody.password.length < 8) {
+      if (userFromBody.password.length < 1) {
         errors.code = 400;
         errors.message = `Informações fora do padrão`;
-        errors.description = `A senha precisa ser maior que 8 digitos`;
+        errors.description = `A senha precisa ser maior que 1 digito`;
       }
 
       if (Object.keys(errors).length > 0) {
@@ -94,9 +94,10 @@ class UsersController {
 
       const userInfo = {
         ...userFromBody,
+        password: await hashPassword(userFromBody.password),
         is_collector: false,
         is_admin: false,
-        password: await hashPassword(userFromBody.password),
+        created_date: new Date(),
       };
 
       const insertResult = await UsersModels.addUser(userInfo);
@@ -211,7 +212,7 @@ class UsersController {
         return;
       }
 
-      res.status(200).json({
+      res.status(204).json({
         status: 'Sucesso',
       });
     } catch (e) {
@@ -243,7 +244,7 @@ class UsersController {
         errors.message = 'Erro interno, por favor tente mas tarde';
       }
 
-      res.status(200).json({
+      res.status(204).json({
         status: 'Sucesso',
       });
     } catch (e) {
@@ -265,7 +266,7 @@ class UsersController {
       const { email, password } = req.body;
 
       /**validações do form */
-      if (email.length < 8) {
+      if (email.length < 1) {
         errors = [
           {
             code: 400,
@@ -305,24 +306,24 @@ class UsersController {
         return;
       }
 
-      const resultCreateJwsToken = await UsersModels.addSession(
-        user.user_id,
-        user.createJwsToken()
-      );
+      // const resultCreateJwsToken = await UsersModels.addSession(
+      //   user.user_id,
+      //   user.createJwsToken()
+      // );
 
-      if (!resultCreateJwsToken.sucess) {
-        errors.status = 'Falha';
-        errors.message = resultCreateJwsToken.error;
-      }
+      // if (!resultCreateJwsToken.sucess) {
+      //   errors.status = 'Falha';
+      //   errors.message = resultCreateJwsToken.error;
+      // }
 
-      if (Object.keys(errors).length > 0) {
-        res.status(400).json(errors);
-        return;
-      }
+      // if (Object.keys(errors).length > 0) {
+      //   res.status(400).json(errors);
+      //   return;
+      // }
 
       res.status(201).json({
         code: 201,
-        user_info: user.toJsonRes(),
+        // user_info: user.toJsonRes(),
         auth_token: user.createJwsToken(),
       });
     } catch (e) {
@@ -339,15 +340,6 @@ class UsersController {
    * Metodo para adicionar o endereço do usuario
    */
   static async apiAddUserAddress(req, res) {
-    //   {
-    //     "street": "Rua Leopoldo Couto de Magalhães Jr.",
-    //     "number": "700",
-    //     "neighborhood": "Itaim Bibi",
-    //     "complement": "7° andar",
-    //     "city": "São Paulo",
-    //     "state": "SP"
-    // }
-
     try {
       const userId = req.params.id;
       const userAddress = req.body;
@@ -365,7 +357,7 @@ class UsersController {
         });
       }
 
-      res.status(200).json({
+      res.status(201).json({
         status: 'Sucesso',
       });
     } catch (e) {
@@ -390,13 +382,103 @@ class UsersController {
         codAddress
       );
 
-      let response = {
-        results: adressResult,
-        total_results: 1,
-        page: 0,
-      };
+      // let response = {
+      //   results: adressResult,
+      //   total_results: 1,
+      //   page: 0,
+      // };
+
+      let response = adressResult;
 
       res.status(200).json(response);
+    } catch (e) {
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: 'Erro interno, por favor tente mas tarde',
+        description: `${e}`,
+      });
+    }
+  }
+
+  /**
+   * Metodo para alterar o endereço infomardo
+   */
+  static async apiAlterUserAddress(req, res) {
+    try {
+      if (req.params.codAddress == 0) {
+        res.status(400).json({
+          code: 400,
+          message: 'URI incompleta',
+          description:
+            'É necessario informar o codigo do endereço diferente de 0',
+        });
+        return;
+      }
+
+      const userId = req.params.id;
+      const codAddress = req.params.codAddress;
+      const userData = req.body;
+
+      const result = await UsersModels.alterAddress(
+        userId,
+        codAddress,
+        userData
+      );
+
+      if (!result) {
+        res.status(404).json({
+          code: 404,
+          message: 'O endereço informado não existe',
+          description: 'O recurso informado não existe',
+        });
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (e) {
+      logger.error(e, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: 'Erro interno, por favor tente mas tarde',
+        description: `${e}`,
+      });
+    }
+  }
+
+  /**
+   * Metodo para deletar o endereço do usuario
+   */
+  static async apiDeleteUserAddress(req, res) {
+    try {
+      if (req.params.codAddress == 0) {
+        res.status(400).json({
+          code: 400,
+          message: 'URI incompleta',
+          description:
+            'É necessario informar o codigo do endereço diferente de 0',
+        });
+        return;
+      }
+
+      const userId = req.params.id;
+      const codAddress = req.params.codAddress;
+
+      const resultDelete = await UsersModels.deleteUserAddress(
+        userId,
+        codAddress
+      );
+
+      if (resultDelete == 0) {
+        res.status(404).json({
+          code: 404,
+          message: 'O recurso solicitado não existe',
+          description: 'O recurso solicitado não existe',
+        });
+        return;
+      }
+
+      res.status(204).send();
     } catch (e) {
       logger.error(e, { label: 'Express' });
       res.status(500).json({

@@ -21,5 +21,7 @@ routes.post('/', UsersController.apiAddUser);
 /**rotas para ajuste no endereço */
 routes.post('/:id/address', UsersController.apiAddUserAddress);
 routes.get('/:id/address/:codAddress?', UsersController.apiGetAllUserAddress);
+routes.put('/:id/address/:codAddress', UsersController.apiAlterUserAddress);
+routes.delete('/:id/address/:codAddress', UsersController.apiDeleteUserAddress);
 
 module.exports = routes;
