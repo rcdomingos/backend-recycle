@@ -19,8 +19,8 @@ class UsersModels {
       users = await conn.collection('users');
       logger.info(`Conectado na coleção users`, { label: 'MongoDB' });
 
-      sessions = await conn.collection('sessions');
-      logger.info(`Conectado na coleção sessions`, { label: 'MongoDB' });
+      // sessions = await conn.collection('sessions');
+      // logger.info(`Conectado na coleção sessions`, { label: 'MongoDB' });
     } catch (e) {
       logger.error(
         `Falha para conectar com a coleção users ou sessions: ${e}`,
@@ -131,12 +131,17 @@ class UsersModels {
    */
   static async alterUser(userId, userInfo) {
     try {
-      const resultupdate = await users.updateOne(
+      const resultupdate = await users.findOneAndUpdate(
         { _id: ObjectId(userId) },
-        { $set: userInfo }
+        { $set: userInfo },
+        {
+          returnNewDocument: true,
+          returnOriginal: false,
+          projection: { addresses: 0 },
+        }
       );
 
-      return resultupdate;
+      return resultupdate.value;
     } catch (e) {
       logger.error(`Erro ao executar o comando updateOne, ${e}`, {
         label: 'MongoDb',
@@ -181,46 +186,12 @@ class UsersModels {
    * Metodo para adicionar o endereço no banco
    */
   static async addUserAdress(userId, userAddress) {
-    let cod_address = 0;
-    try {
-      const resultQuery = await users
-        .aggregate([
-          {
-            $match: {
-              _id: ObjectId(userId),
-            },
-          },
-          {
-            $project: {
-              _id: 0,
-              numberOfAdress: {
-                $cond: {
-                  if: { $isArray: '$addresses' },
-                  then: { $size: '$addresses' },
-                  else: '0',
-                },
-              },
-            },
-          },
-        ])
-        .toArray();
+    //gerar o codigo do endereço
+    let newCodAddress = parseInt(Date.now().toString().substr(-6));
 
-      cod_address = parseInt(resultQuery[0].numberOfAdress) + 1;
-    } catch (e) {
-      logger.error(`Erro ao executar o comando aggregate, ${e}`, {
-        label: 'MongoDb',
-      });
-      return {
-        error: `Ocorreu um erro para buscar a quantidade de endereços.`,
-        description: `${e}`,
-      };
-    }
-
-    // console.log(address);
-    // return { sucess: true };
     try {
       const address = {
-        cod_address: cod_address,
+        codAddress: newCodAddress,
         ...userAddress,
       };
 
@@ -230,7 +201,7 @@ class UsersModels {
       );
 
       if (userAddressUpdate.modifiedCount || userAddressUpdate.upsertedCount) {
-        return { sucess: true };
+        return await this.getUserAdress(userId, newCodAddress);
       } else {
         return { error: 'Não foi possivel incluir o endereço do usuario' };
       }
@@ -249,38 +220,43 @@ class UsersModels {
    * Metodo para buscar os endereços cadastrados do usuario no banco
    */
   static async getUserAdress(userId, codAdress = 0) {
-    let projection = {};
+    let icodAdress = parseInt(codAdress);
+    let resultQuery;
     try {
-      let adressPosition = codAdress > 0 ? codAdress - 1 : 0;
-
-      if (codAdress === 0) {
-        projection = {
-          _id: 0,
-          addresses: 1,
-        };
+      if (codAdress == 0) {
+        resultQuery = await users
+          .find({ _id: ObjectId(userId) })
+          .project({ _id: 0, addresses: 1 });
       } else {
-        projection = {
-          _id: 0,
-          addresses: { $arrayElemAt: ['$addresses', adressPosition] },
-        };
+        resultQuery = await users.aggregate([
+          {
+            $match: {
+              _id: ObjectId(userId),
+            },
+          },
+          {
+            $unwind: {
+              path: '$addresses',
+              preserveNullAndEmptyArrays: false,
+            },
+          },
+          {
+            $match: {
+              'addresses.codAddress': icodAdress,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              addresses: 1,
+            },
+          },
+        ]);
       }
 
-      const resultQuery = await users.aggregate([
-        {
-          $match: {
-            _id: ObjectId(userId),
-          },
-        },
-        {
-          $project: projection,
-        },
-      ]);
+      var result = await resultQuery.toArray();
 
-      let resultFind = await resultQuery.toArray();
-
-      let adressResult = resultFind[0];
-
-      return { adressResult };
+      return result[0];
     } catch (e) {
       logger.error(`Erro ao executar o comando aggregate, ${e}`, {
         label: 'MongoDb',
@@ -296,7 +272,6 @@ class UsersModels {
    * Metodo para alterar o endereço do usuario no banco
    */
   static async alterAddress(userId, codAdress, dataAdress) {
-    let adressPosition = codAdress > 0 ? codAdress - 1 : 0;
     let addresses = {};
     let icodAdress = parseInt(codAdress);
 
@@ -309,7 +284,7 @@ class UsersModels {
         'addresses.$[address].complement': dataAdress.complement || undefined,
         'addresses.$[address].city': dataAdress.city || undefined,
         'addresses.$[address].state': dataAdress.state || undefined,
-        'addresses.$[address].zip_code': dataAdress.zip_code || undefined,
+        'addresses.$[address].zipCode': dataAdress.zipCode || undefined,
       };
       //remover os campos undefined para não ficar null
       addresses = await dataCleaning(addresses);
@@ -324,19 +299,18 @@ class UsersModels {
     }
 
     try {
-      const resultUpdate = await users.findOneAndUpdate(
+      const resultUpdate = await users.updateOne(
         { _id: ObjectId(userId) },
         { $set: addresses },
         {
-          arrayFilters: [{ 'address.cod_address': icodAdress }],
+          arrayFilters: [{ 'address.codAddress': icodAdress }],
           upsert: true,
           projection: { addresses: 1 },
-          returnNewDocument: true,
-          returnOriginal: false,
         }
       );
+
       //retornar o endereço alterado
-      return resultUpdate.value.addresses;
+      return await this.getUserAdress(userId, icodAdress);
     } catch (e) {
       logger.error(`Erro ao executar o comando aggregate, ${e}`, {
         label: 'MongoDb',
@@ -357,7 +331,7 @@ class UsersModels {
 
       const resultUpdate = await users.updateOne(
         { _id: ObjectId(userId) },
-        { $pull: { addresses: { cod_address: icodAdress } } }
+        { $pull: { addresses: { codAddress: icodAdress } } }
       );
 
       return resultUpdate.modifiedCount;

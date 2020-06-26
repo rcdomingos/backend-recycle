@@ -7,12 +7,12 @@ const ArticleController = require('../controllers/articles.controller');
 
 routes.get('/', ArticleController.apiGetAllArticles);
 
-routes.get('/:id_article', ArticleController.apiGetArticle);
+routes.get('/:articleId', ArticleController.apiGetArticle);
 
 routes.post('/', ArticleController.apiAddArticle);
 
-routes.put('/:id_article', ArticleController.apiAlterArticle);
+routes.put('/:articleId', ArticleController.apiAlterArticle);
 
-routes.delete('/:id_article', ArticleController.apiDeleteArticle);
+routes.delete('/:articleId', ArticleController.apiDeleteArticle);
 
 module.exports = routes;

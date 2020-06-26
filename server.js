@@ -12,8 +12,10 @@ const CollectorRoutes = require('./src/routes/collector.routes');
 const CollectorModels = require('./src/models/collector.models');
 const CollectRoutes = require('./src/routes/collections.routes');
 const CollectModels = require('./src/models/collections.models');
+const FeedModels = require('./src/models/feeds.model');
+const FeedRoutes = require('./src/routes/feeds.routes');
 
-logger.info(`Inciando o servidor...`, { label: 'Express' });
+logger.info(`Iniciando o servidor...`, { label: 'Express' });
 
 const app = express();
 
@@ -26,6 +28,7 @@ app.use('/api/v1/users', UsersRoutes);
 app.use('/api/v1/articles', ArticleRoutes);
 app.use('/api/v1/collectors', CollectorRoutes);
 app.use('/api/v1/collections', CollectRoutes);
+app.use('/api/v1/feeds', FeedRoutes);
 
 logger.info(`Rotas Carregadas`, { label: 'Express' });
 // const uri =
@@ -39,18 +42,19 @@ const client = new MongoClient(process.env.DB_MONGO, {
 client
   .connect()
   .catch((err) => {
-    console.error(err.stack);
+    logger.error(err.stack, { label: 'MongoDb' });
     process.exit(1);
   })
   .then(async (client) => {
     /**Conecta na database  */
-    const db = client.db('recycle');
-    logger.info(`Conectado no banco db recycle`, { label: 'MongoDb' });
+    const db = client.db('recycleDB');
+    logger.info(`Conectado no banco db recycleDB`, { label: 'MongoDb' });
 
     await UsersModels.conectCollection(db);
     await ArticleModels.conectCollection(db);
     await CollectorModels.conectCollection(db);
     await CollectModels.conectCollection(db);
+    await FeedModels.conectCollection(db);
 
     /**starta a aplicação */
     app.listen(port, () => {

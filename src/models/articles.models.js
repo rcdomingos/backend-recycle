@@ -6,13 +6,10 @@ let articles;
 class ArticleModels {
   /**Metodo para conecatar na coleção usuario */
   static async conectCollection(conn) {
-    if (articles) {
-      return;
-    }
+    if (articles) return;
 
     try {
       articles = await conn.collection('articles');
-
       logger.info(`Conectado na coleção articles`, { label: 'MongoDB' });
     } catch (e) {
       logger.error(`Falha para conectar com a coleção articles: ${e} `, {
@@ -33,7 +30,7 @@ class ArticleModels {
         .find(query)
         .limit(articlePerPage)
         .skip(skip)
-        .project({ title: 1, author: 1, created_date: 1, card: 1 });
+        .project({ title: 1, author: 1, createdDate: 1, card: 1 });
     } catch (e) {
       console.error(`Não foi possivel realizar o comando find: ${e}`);
       return { articleList: [], totalNumArticle: 0 };
@@ -63,9 +60,7 @@ class ArticleModels {
         };
       }
 
-      console.log(resultInsertDb);
-
-      return { sucess: true, article_id: resultInsertDb.insertedId };
+      return { sucess: true, articleId: resultInsertDb.insertedId };
     } catch (e) {
       return {
         error: `Ocorreu um erro para Cadastrar o Artigo`,
@@ -74,9 +69,9 @@ class ArticleModels {
     }
   }
 
-  static async getArticle(article_id) {
+  static async getArticle(articleId) {
     try {
-      const resultFind = await articles.findOne(ObjectId(article_id));
+      const resultFind = await articles.findOne(ObjectId(articleId));
 
       return resultFind || { message: 'Artigo não localizado' };
     } catch (e) {
@@ -88,13 +83,13 @@ class ArticleModels {
     }
   }
 
-  static async alterArticle(article_id, updateUser, articleData) {
+  static async alterArticle(articleId, updateUser, articleData) {
     try {
-      articleData.updated_date = new Date();
-      articleData.updated_user = updateUser;
+      articleData.updatedDate = new Date();
+      articleData.updatedUser = updateUser;
 
       const resultUpdate = await articles.findOneAndUpdate(
-        { _id: ObjectId(article_id) },
+        { _id: ObjectId(articleId) },
         { $set: articleData },
         { returnOriginal: false }
       );
@@ -109,10 +104,10 @@ class ArticleModels {
     }
   }
 
-  static async deleteArticle(article_id) {
+  static async deleteArticle(articleId) {
     try {
       const resultDelete = await articles.deleteOne({
-        _id: ObjectId(article_id),
+        _id: ObjectId(articleId),
       });
 
       if (resultDelete.deletedCount > 0) {

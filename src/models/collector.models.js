@@ -8,9 +8,7 @@ class CollectorModels {
    * Conectando com o coleção pre_collector
    */
   static async conectCollection(conn) {
-    if (preCollector) {
-      return;
-    }
+    if (preCollector) return;
     try {
       preCollector = await conn.collection('pre_collector');
 
@@ -28,7 +26,7 @@ class CollectorModels {
   static async addCollector(userId, userData) {
     try {
       const resultInsert = await preCollector.updateOne(
-        { user_id: ObjectId(userId) },
+        { userId: ObjectId(userId) },
         { $set: userData },
         { upsert: true }
       );
@@ -56,7 +54,7 @@ class CollectorModels {
   static async alterStatusPreCollector(userId, data) {
     try {
       const resultUpdate = await preCollector.findOneAndUpdate(
-        { user_id: ObjectId(userId) },
+        { userId: ObjectId(userId) },
         { $set: data },
         { returnOriginal: false }
       );
@@ -95,8 +93,8 @@ class CollectorModels {
   static async getStatusPreCollector(userId) {
     try {
       return await preCollector
-        .find({ user_id: ObjectId(userId) })
-        .project({ user_id: 1, status: 1, _id: 0 })
+        .find({ userId: ObjectId(userId) })
+        .project({ userId: 1, status: 1, _id: 0 })
         .toArray();
     } catch (e) {
       logger.error(e, { label: 'MongoDb' });
@@ -113,7 +111,7 @@ class CollectorModels {
   static async deletePreCollector(userId) {
     try {
       const resultDelete = await preCollector.deleteOne({
-        user_id: ObjectId(userId),
+        userId: ObjectId(userId),
         status: { $ne: 2 },
       });
 

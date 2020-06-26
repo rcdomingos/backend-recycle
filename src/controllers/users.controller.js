@@ -8,7 +8,7 @@ const hashPassword = (password) => bcrypt.hash(password, 10);
 
 class User {
   constructor({ _id, name, email, password } = {}) {
-    this.user_id = _id;
+    this.userId = _id;
     this.name = name;
     this.email = email;
     this.password = password;
@@ -16,7 +16,7 @@ class User {
 
   toJsonRes() {
     return {
-      user_id: this.user_id,
+      userId: this.userId,
       name: this.name,
       email: this.email,
     };
@@ -95,20 +95,19 @@ class UsersController {
       const userInfo = {
         ...userFromBody,
         password: await hashPassword(userFromBody.password),
-        is_collector: false,
-        is_admin: false,
-        created_date: new Date(),
+        isCollector: false,
+        isAdmin: false,
+        createdDate: new Date(),
       };
 
       const insertResult = await UsersModels.addUser(userInfo);
 
-      if (!insertResult.sucess) {
-        errors.message = insertResult.error;
-        errors.description = insertResult.description;
-      }
-
-      if (Object.keys(errors).length > 0) {
-        res.status(400).json(errors);
+      if (insertResult.error) {
+        res.status(400).json({
+          code: 400,
+          message: `${insertResult.error}`,
+          description: `${insertResult.description}`,
+        });
         return;
       }
 
@@ -130,10 +129,10 @@ class UsersController {
   /**Metodo para listar um usuario especifico  */
   static async apiGetUser(req, res) {
     try {
-      let id_user = req.params.id;
+      let userId = req.params.id;
 
       // console.log(req.userJwt.user_id);
-      if (req.userJwt.user_id != id_user) {
+      if (req.userJwt.userId != userId) {
         res.status(401).json({
           code: 401,
           message: 'Não Autorizada',
@@ -142,7 +141,7 @@ class UsersController {
         return;
       }
 
-      const resultFindUser = await UsersModels.getUser(id_user);
+      const resultFindUser = await UsersModels.getUser(userId);
 
       if (resultFindUser == null) {
         res.status(404).json({
@@ -178,32 +177,12 @@ class UsersController {
    */
   static async apiAlterUser(req, res) {
     try {
-      let id_user = req.params.id;
-      const userFromBody = req.body;
+      let userId = req.params.id;
+      let userFromBody = req.body;
 
-      const alterResult = await UsersModels.alterUser(id_user, userFromBody);
+      const alterResult = await UsersModels.alterUser(userId, userFromBody);
 
-      var { error } = alterResult;
-
-      if (error) {
-        res.status(400).json({
-          code: 400,
-          message: `Erro interno, por favor tente mas tarde`,
-          description: `${error}`,
-        });
-        return;
-      }
-
-      if (alterResult.matchedCount === 1 && alterResult.modifiedCount === 0) {
-        res.status(200).json({
-          code: 200,
-          message: 'Não foram realizadas nenhuma mudança no usuario',
-          description: 'Não foram realizadas nenhuma mudança no usuario',
-        });
-        return;
-      }
-
-      if (alterResult.modifiedCount === 0) {
+      if (alterResult === null) {
         res.status(404).json({
           code: 404,
           message: 'O recurso solicitado não existe',
@@ -212,9 +191,16 @@ class UsersController {
         return;
       }
 
-      res.status(204).json({
-        status: 'Sucesso',
-      });
+      if (alterResult.error) {
+        res.status(400).json({
+          code: 400,
+          message: `${alterResult.error}`,
+          description: `${alterResult.description}`,
+        });
+        return;
+      }
+
+      res.status(202).json(alterResult);
     } catch (e) {
       logger.error(e, { label: 'Express' });
       res.status(500).json({
@@ -229,15 +215,15 @@ class UsersController {
    * Metodo para deletar um usuario
    */
   static async apiDeleteUser(req, res) {
-    let id_user = req.params.id;
+    let userId = req.params.id;
     let userInfoDelete = {};
     let errors = {};
 
     try {
       userInfoDelete.status = 'inativa';
-      userInfoDelete.dateDeleteTS = Date.now();
+      userInfoDelete.deletedDateTS = Date.now();
 
-      const deleteResult = await UsersModels.alterUser(id_user, userInfoDelete);
+      const deleteResult = await UsersModels.alterUser(userId, userInfoDelete);
 
       if (!deleteResult.sucess) {
         errors.status = 'Falha';
@@ -285,7 +271,7 @@ class UsersController {
 
       if (!userFromDb) {
         res.status(401).json({
-          code: 401,
+          code: 401001,
           message: `E-mail não locarizado`,
           description: `Verifique se o email digitado esta correto`,
         });
@@ -299,7 +285,7 @@ class UsersController {
 
       if (!login) {
         res.status(401).json({
-          code: 401,
+          code: 401002,
           message: `Senha não confere`,
           description: `Verifique se a senha digitada esta correta`,
         });
@@ -349,17 +335,16 @@ class UsersController {
         userAddress
       );
 
-      if (!addressResult.sucess) {
+      if (addressResult.error) {
         res.status(500).json({
           code: 500,
           message: 'Erro interno, por favor tente mas tarde',
           description: addressResult.error,
         });
+        return;
       }
 
-      res.status(201).json({
-        status: 'Sucesso',
-      });
+      res.status(201).json(addressResult.addresses);
     } catch (e) {
       res.status(500).json({
         code: 500,
@@ -377,20 +362,9 @@ class UsersController {
       const userId = req.params.id;
       const codAddress = req.params.codAddress;
 
-      const { adressResult } = await UsersModels.getUserAdress(
-        userId,
-        codAddress
-      );
+      const addresses = await UsersModels.getUserAdress(userId, codAddress);
 
-      // let response = {
-      //   results: adressResult,
-      //   total_results: 1,
-      //   page: 0,
-      // };
-
-      let response = adressResult;
-
-      res.status(200).json(response);
+      res.status(200).json(addresses);
     } catch (e) {
       logger.error(e, { label: 'Express' });
       res.status(500).json({
@@ -426,16 +400,16 @@ class UsersController {
         userData
       );
 
-      if (!result) {
+      if (result.error) {
         res.status(404).json({
           code: 404,
-          message: 'O endereço informado não existe',
-          description: 'O recurso informado não existe',
+          message: result.error,
+          description: `${result.description}`,
         });
         return;
       }
 
-      res.status(200).json(result);
+      res.status(201).json(result.addresses);
     } catch (e) {
       logger.error(e, { label: 'Express' });
       res.status(500).json({

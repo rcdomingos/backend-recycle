@@ -32,6 +32,8 @@ const createStatusCollector = (code) => {
   };
 };
 
+const url = process.env.URL || process.env.LOCAL_URL;
+
 /**
  * Classe com os metodos utilizado para as solcitações dos Coletores
  */
@@ -41,23 +43,19 @@ class CollectorController {
    */
   static async apiAddCollector(req, res) {
     try {
-      const userIdJWT = req.userJwt.user_id;
+      const userIdJWT = req.userJwt.userId;
       const userNameJWT = req.userJwt.name;
-      const collectedCities = req.body.collectedCities;
-      const collectedNeighbourhood = req.body.collectedNeighbourhood;
+      const collectionLocations = req.body.collectionLocations;
       const vehicle = req.body.vehicle;
+
       const { status } = createStatusCollector(1);
 
       let data = {
-        user_name: userNameJWT,
-        collected_cities: Array.isArray(collectedCities)
-          ? collectedCities
-          : Array(collectedCities),
-        collected_neighbourhood: Array.isArray(collectedNeighbourhood)
-          ? collectedNeighbourhood
-          : Array(collectedNeighbourhood),
+        userName: userNameJWT,
+        collectionLocations: collectionLocations,
+
         vehicle: Array.isArray(vehicle) ? vehicle : Array(vehicle),
-        created_date: new Date(),
+        createdDate: new Date(),
         status,
       };
 
@@ -100,13 +98,13 @@ class CollectorController {
       collectorsList.map((collector) => {
         collector.Links = [
           {
-            url: `http://localhost:3001/api/v1/users/${collector.user_id}`,
+            url: `${url}/api/v1/users/${collector.userId}`,
             Method: 'GET',
             Type: 'Details',
           },
           {
-            url: `http://localhost:3001/api/v1/collectors/${collector.user_id}/status`,
-            Method: 'PATCH',
+            url: `${url}/api/v1/collectors/${collector.userId}/status`,
+            Method: 'PUT',
             Type: 'Action',
           },
         ];
@@ -181,6 +179,8 @@ class CollectorController {
     const userId = req.params.id;
     const infoStatus = createStatusCollector(newStatus);
     const statusValidos = [1, 2, 3, 4, 5];
+    const userIdJWT = req.userJwt.userId;
+    const userNameJWT = req.userJwt.name;
 
     try {
       if (statusValidos.includes(newStatus)) {
@@ -201,11 +201,11 @@ class CollectorController {
         /** adicionar os dados na coleção users quando aprovado */
         if (newStatus === 2) {
           let data = {
-            collected_cities: resultStatus.collected_cities,
-            collected_neighbourhood: resultStatus.collected_neighbourhood,
+            approvedById: userIdJWT,
+            collectorDate: new Date(),
+            collectionLocations: resultStatus.collectionLocations,
             vehicle: resultStatus.vehicle,
-            collector_date: new Date(),
-            is_collector: true,
+            isCollector: true,
           };
 
           const resultAlterUser = await UsersModels.alterUser(userId, data);
@@ -243,3 +243,19 @@ class CollectorController {
 }
 
 module.exports = CollectorController;
+
+// {
+//   "collectionLocations": [
+//       {
+//           "city": "São Roque",
+//           "neighbourhood": [
+//               "Centro",
+//               "Marmeleiro"
+//           ]
+//       }
+//   ],
+//   "vehicle": [
+//       "Caminhão",
+//       "Carro"
+//   ]
+// }

@@ -15,8 +15,8 @@ class ArticleController {
 
       articleList.map((article) => {
         article.url = `http://localhost:3001/api/v1/articles/${article._id}`;
-        article.Method = 'GET';
-        article.Type = 'Details';
+        article.method = 'GET';
+        article.type = 'Details';
       });
 
       let response = {
@@ -40,7 +40,7 @@ class ArticleController {
   /**Metodo para listar um artigo especifico */
   static async apiGetArticle(req, res) {
     try {
-      const articleId = req.params.id_article;
+      const articleId = req.params.articleId;
 
       const response = await ArticleModels.getArticle(articleId);
 
@@ -59,13 +59,23 @@ class ArticleController {
   /**Metodo para adicionar um artigo */
   static async apiAddArticle(req, res) {
     try {
-      const { title, body, author } = req.body;
+      const {
+        title,
+        body,
+        author,
+        shareMessage,
+        seoTitle,
+        seoDescription,
+      } = req.body;
 
       let data = {
         title: title,
         body: body,
         author: author,
-        created_date: new Date(),
+        shareMessage: shareMessage,
+        seoTitle: seoTitle,
+        seoDescription: seoDescription,
+        createdDate: new Date(),
       };
 
       // console.log(data);
@@ -75,7 +85,7 @@ class ArticleController {
       if (!resultInsert.error) {
         res.status(201).json({
           status: 'Sucesso',
-          url: `http:localhost:3001/articles/${resultInsert.article_id}`,
+          url: `http:localhost:3001/articles/${resultInsert.articleId}`,
         });
       }
     } catch (e) {
@@ -91,7 +101,7 @@ class ArticleController {
   /**metodo para alterar um artigo */
   static async apiAlterArticle(req, res) {
     try {
-      const articleId = req.params.id_article;
+      const articleId = req.params.articleId;
       const updateUser = '123546546548';
       const articleData = req.body;
 
@@ -114,7 +124,7 @@ class ArticleController {
   /**metodo para deletar um artigo */
   static async apiDeleteArticle(req, res) {
     try {
-      const articleId = req.params.id_article;
+      const articleId = req.params.articleId;
 
       const resultDelete = await ArticleModels.deleteArticle(articleId);
 
