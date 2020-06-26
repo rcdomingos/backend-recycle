@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const MongoClient = require('mongodb').MongoClient;
 const logger = require('./utils/winston');
+const path = require('path');
 
 /**local require */
 const UsersModels = require('./src/models/users.models');
@@ -19,7 +20,7 @@ logger.info(`Iniciando o servidor...`, { label: 'Express' });
 
 const app = express();
 
-const port = 3001;
+const port = process.env.PORT || process.env.LOCAL_PORT;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,9 +31,14 @@ app.use('/api/v1/collectors', CollectorRoutes);
 app.use('/api/v1/collections', CollectRoutes);
 app.use('/api/v1/feeds', FeedRoutes);
 
+/**Rotas staticas */
+app.use(
+  '/images',
+  express.static(path.resolve(__dirname, 'uploads', 'images'))
+);
+
 logger.info(`Rotas Carregadas`, { label: 'Express' });
-// const uri =
-//   'mongodb+srv://recycle:recycle2020@sandbox-a2uhg.mongodb.net/test?retryWrites=true&w=majority';
+/**inicializando a conexão com o mongoDb */
 logger.info(`Inciando conexões com o MongoDb`, { label: 'Express' });
 const client = new MongoClient(process.env.DB_MONGO, {
   useNewUrlParser: true,

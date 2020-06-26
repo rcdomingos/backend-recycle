@@ -41,7 +41,7 @@ class CollectController {
 
     // preparando os dados que serão inseridos
     try {
-      dataCollect.generator_id = ObjectId(req.userJwt.user_id); //JWT
+      dataCollect.generatorId = ObjectId(req.userJwt.userId); //JWT
 
       //validação dos dados
       let error = {};
@@ -49,27 +49,26 @@ class CollectController {
       if (!req.body.collectDate) {
         error.collectDate = 'É necessario informar a data da coleta';
       } else {
-        dataCollect.collect_date = new Date(req.body.collectDate);
+        dataCollect.collectDate = new Date(req.body.collectDate);
       }
-      dataCollect.collect_time = req.body.collectTime;
-      dataCollect.collect_photo = req.body.collectPhoto;
-      dataCollect.created_date = new Date();
-      dataCollect.generator_note = req.body.notes;
+      dataCollect.collectTime = req.body.collectTime;
+      dataCollect.collectPhoto = req.body.collectPhoto;
+      dataCollect.createdDate = new Date();
+      dataCollect.generatorNote = req.body.generatorNote;
 
       /** validar o endereço */
-      dataCollect.collect_address = {};
-      dataCollect.collect_address.street = req.body.street;
-      dataCollect.collect_address.number = req.body.number;
-      dataCollect.collect_address.complement = req.body.complement;
-      dataCollect.collect_address.neighborhood = req.body.neighborhood;
-      dataCollect.collect_address.city = req.body.city;
-      dataCollect.collect_address.state = req.body.state;
-      dataCollect.collect_address.zip_code = req.body.zipCode;
-
-      dataCollect.collect_type = Array.isArray(req.body.collectType)
-        ? req.body.collectType
-        : Array(req.body.collectType);
-      dataCollect.collect_weight = parseFloat(req.body.collectWeight);
+      dataCollect.address = {};
+      dataCollect.address.street = req.body.address.street;
+      dataCollect.address.number = req.body.address.number;
+      dataCollect.address.complement = req.body.address.complement;
+      dataCollect.address.neighborhood = req.body.address.neighborhood;
+      dataCollect.address.city = req.body.address.city;
+      dataCollect.address.state = req.body.address.state;
+      dataCollect.address.zip_code = req.body.address.zipCode;
+      dataCollect.collectType = req.body.collectType;
+      dataCollect.collectWeight = req.body.collectWeight
+        ? parseFloat(req.body.collectWeight)
+        : 0.0;
 
       dataCollect.status = createStatusCollect(1);
 
@@ -205,13 +204,13 @@ class CollectController {
     try {
       /**Aceitar a coleta */
       if (status == 2) {
-        dataCollect.collector_id = req.userJwt.user_id;
-        dataCollect.acepted_date = new Date();
+        dataCollect.collectorId = req.userJwt.userId;
+        dataCollect.aceptedDate = new Date();
       }
 
       /**Finalizar a coleta */
       if (status == 3) {
-        dataCollection.collected_date = new Date();
+        dataCollection.collectedDate = new Date();
       }
 
       dataCollect.status = createStatusCollect(status);
@@ -294,38 +293,33 @@ class CollectController {
     try {
       /**verificar os campos do form */
       if (req.body.collectDate) {
-        dataCollect.collect_date = new Date(req.body.collectDate);
+        dataCollect.collectDate = new Date(req.body.collectDate);
       }
-      dataCollect.collect_time = req.body.collectTime;
-      dataCollect.collect_photo = req.body.collectPhoto;
-      dataCollect.generator_note = req.body.notes;
+      dataCollect.collectTime = req.body.collectTime;
+      dataCollect.collectPhoto = req.body.collectPhoto;
+      dataCollect.generatorNote = req.body.generatorNote;
+
       /** validar o endereço */
-      dataCollect.collect_address = new Object();
-      dataCollect.collect_address.street = req.body.street;
-      dataCollect.collect_address.number = req.body.number;
-      dataCollect.collect_address.complement = req.body.complement;
-      dataCollect.collect_address.neighborhood = req.body.neighborhood;
-      dataCollect.collect_address.city = req.body.city;
-      dataCollect.collect_address.state = req.body.state;
-      dataCollect.collect_address.zip_code = req.body.zipCode;
-      if (req.body.collectType) {
-        dataCollect.collect_type = Array.isArray(req.body.collectType)
-          ? req.body.collectType
-          : Array(req.body.collectType);
-      }
-      if (req.body.collectWeight) {
-        parseFloat(req.body.collectWeight);
-      }
+      dataCollect.address = {};
+      dataCollect.address.street = req.body.address.street;
+      dataCollect.address.number = req.body.address.number;
+      dataCollect.address.complement = req.body.address.complement;
+      dataCollect.address.neighborhood = req.body.address.neighborhood;
+      dataCollect.address.city = req.body.address.city;
+      dataCollect.address.state = req.body.address.state;
+      dataCollect.address.zip_code = req.body.address.zipCode;
+      dataCollect.collectType = req.body.collectType;
+      dataCollect.collectWeight = req.body.collectWeight
+        ? parseFloat(req.body.collectWeight)
+        : 0.0;
 
-      dataCollect.collect_address = await dataCleaning(
-        dataCollect.collect_address
-      );
+      dataCollect.address = await dataCleaning(dataCollect.address);
 
-      if (Object.keys(dataCollect.collect_address).length == 0) {
-        dataCollect.collect_address = undefined;
+      if (Object.keys(dataCollect.address).length == 0) {
+        dataCollect.address = undefined;
       }
 
-      dataCollect.altered_date = new Date();
+      dataCollect.alteredDate = new Date();
 
       /**Removendo os campos undefined */
       collectDataCleaning = await dataCleaning(dataCollect);

@@ -1,5 +1,7 @@
 const ArticleModels = require('../models/articles.models');
 
+const url = process.env.URL || process.env.LOCAL_URL;
+
 class ArticleController {
   /**metodo para listar todos os artigos */
   static async apiGetAllArticles(req, res) {
@@ -14,7 +16,7 @@ class ArticleController {
       } = await ArticleModels.getAllModels(page, limit);
 
       articleList.map((article) => {
-        article.url = `http://localhost:3001/api/v1/articles/${article._id}`;
+        article.url = `${url}/api/v1/articles/${article._id}`;
         article.method = 'GET';
         article.type = 'Details';
       });
@@ -85,7 +87,7 @@ class ArticleController {
       if (!resultInsert.error) {
         res.status(201).json({
           status: 'Sucesso',
-          url: `http:localhost:3001/articles/${resultInsert.articleId}`,
+          url: `${url}/api/v1/articles/${resultInsert.articleId}`,
         });
       }
     } catch (e) {

@@ -1,3 +1,5 @@
 node_modules
 *.log
 
+uploads/images/*
+!uploads/images/.gitkeep

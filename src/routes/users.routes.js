@@ -1,5 +1,7 @@
 const express = require('express');
 const routes = express.Router();
+const multer = require('multer');
+const multerConfig = require('../middlewares/multer');
 
 const authentication = require('../middlewares/authentication');
 
@@ -12,7 +14,12 @@ routes.post('/create-auth', UsersController.apiCreateAuth);
 
 routes.get('/:id', authentication, UsersController.apiGetUser);
 
-routes.put('/:id', authentication, UsersController.apiAlterUser);
+routes.put(
+  '/:id',
+  authentication,
+  multer(multerConfig).single('image'),
+  UsersController.apiAlterUser
+);
 
 routes.delete('/:id', authentication, UsersController.apiDeleteUser);
 

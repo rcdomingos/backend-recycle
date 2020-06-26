@@ -82,7 +82,12 @@ class CollectModel {
       cursor = await collections
         .find(query)
         .limit(limit)
-        .project({ collect_date: 1, collect_type: 1 })
+        .project({
+          collectDate: 1,
+          collectType: 1,
+          createdDate: 1,
+          'status.description': 1,
+        })
         .skip(skip);
     } catch (e) {
       logger.error(e, { label: 'MongoDb' });

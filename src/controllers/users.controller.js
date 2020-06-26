@@ -6,6 +6,8 @@ const logger = require('../../utils/winston');
 /**função para criptografar a senha do usuario */
 const hashPassword = (password) => bcrypt.hash(password, 10);
 
+const url = process.env.URL || process.env.LOCAL_URL;
+
 class User {
   constructor({ _id, name, email, password } = {}) {
     this.userId = _id;
@@ -179,6 +181,18 @@ class UsersController {
     try {
       let userId = req.params.id;
       let userFromBody = req.body;
+
+      /**Salvar a url da imagem de perfil */
+      if (req.file) {
+        // console.log(req.file);
+        // console.log(`${url}/images/${encodeURIComponent(req.file.key)}`);
+        let image = `${url}/images/${encodeURIComponent(req.file.key)}`;
+
+        userFromBody = {
+          image: image,
+          ...userFromBody,
+        };
+      }
 
       const alterResult = await UsersModels.alterUser(userId, userFromBody);
 
