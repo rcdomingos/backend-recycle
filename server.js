@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const MongoClient = require('mongodb').MongoClient;
 const logger = require('./utils/winston');
 const path = require('path');
@@ -21,6 +22,8 @@ logger.info(`Iniciando o servidor...`, { label: 'Express' });
 const app = express();
 
 const port = process.env.PORT || process.env.LOCAL_PORT;
+/**adicionado o cors */
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

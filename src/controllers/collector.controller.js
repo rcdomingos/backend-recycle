@@ -51,9 +51,7 @@ class CollectorController {
       const { status } = createStatusCollector(1);
 
       let data = {
-        userName: userNameJWT,
         collectionLocations: collectionLocations,
-
         vehicle: Array.isArray(vehicle) ? vehicle : Array(vehicle),
         createdDate: new Date(),
         status,
@@ -91,9 +89,9 @@ class CollectorController {
   /**
    *  Metodo para listar todos os usuarios cadastrados como pre-coletores
    */
-  static async apiGetAllPreCollector(req, res) {
+  static async apiGetAllCollector(req, res) {
     try {
-      const collectorsList = await CollectorModels.getAllPreCollector();
+      const collectorsList = await CollectorModels.getAllCollector();
 
       collectorsList.map((collector) => {
         collector.Links = [
@@ -144,15 +142,15 @@ class CollectorController {
   /**
    * Metodo para deletar a solicitação de coletor
    */
-  static async apiDeletePreCollector(req, res) {
+  static async apiDeleteCollector(req, res) {
     try {
       const userId = req.params.id;
 
-      const resultDelete = await CollectorModels.deletePreCollector(userId);
-
-      console.log(resultDelete);
+      const resultDelete = await CollectorModels.deleteCollector(userId);
 
       if (resultDelete.sucess) {
+        await UsersModels.alterUser(userId, { isCollector: false });
+
         res.status(204).send();
       } else {
         res.status(404).json({
@@ -184,40 +182,60 @@ class CollectorController {
 
     try {
       if (statusValidos.includes(newStatus)) {
-        const resultStatus = await CollectorModels.alterStatusPreCollector(
-          userId,
-          infoStatus
-        );
-
-        if (!resultStatus) {
-          res.status(500).json({
-            code: 500,
-            message: `Erro interno, por favor tente mas tarde`,
-            description: `Não foi possivel alterar o status da solicitação`,
-          });
-          return;
-        }
-
         /** adicionar os dados na coleção users quando aprovado */
         if (newStatus === 2) {
           let data = {
             approvedById: userIdJWT,
             collectorDate: new Date(),
-            collectionLocations: resultStatus.collectionLocations,
-            vehicle: resultStatus.vehicle,
-            isCollector: true,
+            status: infoStatus.status,
           };
 
-          const resultAlterUser = await UsersModels.alterUser(userId, data);
+          const resultStatus = await CollectorModels.alterStatusCollector(
+            userId,
+            data
+          );
 
-          if (resultAlterUser.modifiedCount == 0) {
-            logger.error('Ocorreu um erro para alterar o usuario', {
-              label: 'Express',
-            });
+          if (!resultStatus) {
             res.status(500).json({
               code: 500,
               message: `Erro interno, por favor tente mas tarde`,
-              description: `${resultAlterUser.e}`,
+              description: `Não foi possivel alterar o status da solicitação`,
+            });
+            return;
+          }
+
+          const resultAlterUser = await UsersModels.alterUser(userId, {
+            isCollector: true,
+          });
+
+          // if (resultAlterUser.error) {
+          //   logger.error('Ocorreu um erro para alterar o usuario', {
+          //     label: 'Express',
+          //   });
+          //   res.status(500).json({
+          //     code: 500,
+          //     message: `Erro interno, por favor tente mas tarde`,
+          //     description: `${resultAlterUser.e}`,
+          //   });
+          //   return;
+          // }
+        } else {
+          let data = {
+            approvedById: userIdJWT,
+            statusDate: new Date(),
+            status: infoStatus.status,
+          };
+
+          const resultStatus = await CollectorModels.alterStatusCollector(
+            userId,
+            data
+          );
+
+          if (!resultStatus) {
+            res.status(500).json({
+              code: 500,
+              message: `Erro interno, por favor tente mas tarde`,
+              description: `Não foi possivel alterar o status da solicitação`,
             });
             return;
           }

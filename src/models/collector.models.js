@@ -10,11 +10,11 @@ class CollectorModels {
   static async conectCollection(conn) {
     if (preCollector) return;
     try {
-      preCollector = await conn.collection('pre_collector');
+      preCollector = await conn.collection('collectors');
 
-      logger.info(`Conectado na coleção pre_collector`, { label: 'MongoDB' });
+      logger.info(`Conectado na coleção collectors`, { label: 'MongoDB' });
     } catch (e) {
-      logger.error(`Falha para conectar com a coleção pre_collector: ${e} `, {
+      logger.error(`Falha para conectar com a coleção collectors: ${e} `, {
         label: 'MongoDB',
       });
     }
@@ -51,15 +51,14 @@ class CollectorModels {
   /**
    * Metodo para alterar o status da solicitação no banco coleção pre-cadastro
    */
-  static async alterStatusPreCollector(userId, data) {
+  static async alterStatusCollector(userId, data) {
     try {
-      const resultUpdate = await preCollector.findOneAndUpdate(
+      const resultUpdate = await preCollector.updateOne(
         { userId: ObjectId(userId) },
-        { $set: data },
-        { returnOriginal: false }
+        { $set: data }
       );
 
-      return resultUpdate.value;
+      return resultUpdate.modifiedCount;
     } catch (e) {
       logger.error(e, { label: 'MongoDb' });
       return {
@@ -73,7 +72,7 @@ class CollectorModels {
    * Metodo para buscar no banco todos os documentos na coleção pre-cadastro
    */
 
-  static async getAllPreCollector() {
+  static async getAllCollector() {
     try {
       const resultFind = await preCollector.find().toArray();
 
@@ -108,7 +107,7 @@ class CollectorModels {
   /**
    * Metodo para deletar no banco uma solicitação de pre-cadastro que <> de 2 (aprovado)
    **/
-  static async deletePreCollector(userId) {
+  static async deleteCollector(userId) {
     try {
       const resultDelete = await preCollector.deleteOne({
         userId: ObjectId(userId),

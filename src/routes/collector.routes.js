@@ -8,13 +8,9 @@ const CollectorController = require('../controllers/collector.controller');
 /**rotas apartir do '/api/v1/collectors' */
 routes.post('/', authentication, CollectorController.apiAddCollector);
 
-routes.get('/', authentication, CollectorController.apiGetAllPreCollector);
+routes.get('/', authentication, CollectorController.apiGetAllCollector);
 
-routes.delete(
-  '/:id',
-  authentication,
-  CollectorController.apiDeletePreCollector
-);
+routes.delete('/:id', authentication, CollectorController.apiDeleteCollector);
 
 routes.get(
   '/:id/status',
