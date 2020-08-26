@@ -96,8 +96,10 @@ class CollectController {
         collectDataCleaning
       );
 
-      res.status(200).json({
-        resultAddCollect,
+      res.status(201).json({
+        code: 201,
+        message: `Coleta Agendada com sucesso`,
+        description: `Coleta Agendada com sucesso`,
       });
     } catch (e) {
       logger.error(`${e}`, { label: 'Express' });
@@ -179,7 +181,7 @@ class CollectController {
       } else {
         res.status(404).json({
           code: 404,
-          message: `Não foi possivel exlcluir o documento`,
+          message: `Não foi possivel excluir o documento`,
           description: `O documento não esta disponivel ou ja foi excluido`,
         });
       }

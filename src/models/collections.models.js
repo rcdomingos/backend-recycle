@@ -83,10 +83,11 @@ class CollectModel {
         .find(query)
         .limit(limit)
         .project({
+          createdDate: 1,
           collectDate: 1,
           collectType: 1,
-          createdDate: 1,
-          'status.description': 1,
+          collectTime: 1,
+          status: 1,
         })
         .skip(skip);
     } catch (e) {

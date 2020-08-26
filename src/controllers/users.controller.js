@@ -30,7 +30,7 @@ class User {
 
   createJwsToken() {
     return jwt.sign({ ...this.toJsonRes() }, process.env.PRIVATE_KEY, {
-      expiresIn: '365d',
+      expiresIn: '12d',
     });
   }
 
