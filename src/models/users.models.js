@@ -31,16 +31,34 @@ class UsersModels {
   /**
    * Metodo para Listar todos os usuarios do banco
    */
-  static async getAllUsers(page, limit) {
+  static async getAllUsers(page, limit, profile) {
     let query = {};
     let cursor;
     let pagination = page == 0 ? 0 : page - 1;
     let skips = limit * pagination;
     let project = {};
+    let mysort = { name: 1 };
+
+    console.log(profile);
+
+    switch (profile) {
+      case 'coletor':
+        query = { isCollector: true };
+        break;
+      case 'gerador':
+        query = { isCollector: false };
+        break;
+      case 'admin':
+        query = { isAdmin: true };
+        break;
+      default:
+        query = {};
+        break;
+    }
 
     try {
       //listar todos os usuarios
-      cursor = await users.find(query).skip(skips).limit(limit);
+      cursor = await users.find(query).sort(mysort).skip(skips).limit(limit);
     } catch (e) {
       logger.error(`Não foi possivel realizar o comando find: ${e}`, {
         label: 'MongoDb',

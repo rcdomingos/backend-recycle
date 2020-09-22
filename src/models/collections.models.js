@@ -47,10 +47,11 @@ class CollectModel {
    * Metodo para pegar todas as coletas no banco
    */
   static async getAllCollect(filter) {
-    const { page, status, generatorId, limit } = filter;
+    const { page, status, generatorId, collectorId, limit } = filter;
 
     let queryStatus = {};
     let queryGenerator = {};
+    let queryCollector = {};
     let query = {};
 
     let cursor;
@@ -62,34 +63,19 @@ class CollectModel {
       queryStatus = status ? { 'status.code': parseInt(status) } : {};
       /**filtro por usuario */
       queryGenerator = generatorId
-        ? { generator_id: ObjectId(generatorId) }
+        ? { generatorId: ObjectId(generatorId) }
         : {};
 
-      logger.debug(`queryStatus: ${JSON.stringify(queryStatus)}`, {
-        label: 'MongoDB',
-      });
+      /**filtro por coletor */
+      queryCollector = collectorId ? { collectorId: collectorId } : {};
 
-      logger.debug(`queryGenerator: ${JSON.stringify(queryGenerator)}`, {
-        label: 'MongoDB',
-      });
-
-      query = { $and: [queryStatus, queryGenerator] };
+      query = { $and: [queryStatus, queryGenerator, queryCollector] };
 
       logger.debug(`Query Find: ${JSON.stringify(query)}`, {
         label: 'MongoDB',
       });
 
-      cursor = await collections
-        .find(query)
-        .limit(limit)
-        .project({
-          createdDate: 1,
-          collectDate: 1,
-          collectType: 1,
-          collectTime: 1,
-          status: 1,
-        })
-        .skip(skip);
+      cursor = await collections.find(query).limit(limit).skip(skip);
     } catch (e) {
       logger.error(e, { label: 'MongoDb' });
       return {
@@ -159,8 +145,6 @@ class CollectModel {
         { _id: ObjectId(colletcId) },
         { $set: dataCollection }
       );
-
-      console.log(resultUpdate);
 
       return resultUpdate.modifiedCount;
     } catch (e) {

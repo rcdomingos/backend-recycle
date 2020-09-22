@@ -9,19 +9,29 @@ const hashPassword = (password) => bcrypt.hash(password, 10);
 const url = process.env.URL || process.env.LOCAL_URL;
 
 class User {
-  constructor({ _id, name, email, password } = {}) {
+  constructor({ _id, name, email, password, isAdmin } = {}) {
     this.userId = _id;
     this.name = name;
     this.email = email;
     this.password = password;
+    this.isAdmin = isAdmin;
   }
 
   toJsonRes() {
-    return {
-      userId: this.userId,
-      name: this.name,
-      email: this.email,
-    };
+    if (this.isAdmin) {
+      return {
+        userId: this.userId,
+        name: this.name,
+        email: this.email,
+        isAdmin: this.isAdmin,
+      };
+    } else {
+      return {
+        userId: this.userId,
+        name: this.name,
+        email: this.email,
+      };
+    }
   }
 
   async comparePassword(passFromForm) {
@@ -49,10 +59,12 @@ class UsersController {
     try {
       let page = parseInt(req.query.page || 1);
       let limit = parseInt(req.query.limit || 10);
+      let profile = req.query.profile || null;
 
       const { userList, totalNumUser, count } = await UsersModels.getAllUsers(
         page,
-        limit
+        limit,
+        profile
       );
 
       let response = {
@@ -90,7 +102,7 @@ class UsersController {
       }
 
       if (Object.keys(errors).length > 0) {
-        res.status(400).json(errors);
+        res.status(200).json(errors);
         return;
       }
 
@@ -105,7 +117,7 @@ class UsersController {
       const insertResult = await UsersModels.addUser(userInfo);
 
       if (insertResult.error) {
-        res.status(400).json({
+        res.status(200).json({
           code: 400,
           message: `${insertResult.error}`,
           description: `${insertResult.description}`,
@@ -132,15 +144,15 @@ class UsersController {
   static async apiGetUser(req, res) {
     try {
       let userId = req.params.id;
-
-      // console.log(req.userJwt.user_id);
-      if (req.userJwt.userId != userId) {
-        res.status(401).json({
-          code: 401,
-          message: 'Não Autorizada',
-          description: `As informações de autenticação necessárias estão ausentes ou não são válidas para o recurso.`,
-        });
-        return;
+      if (!req.userJwt.isAdmin) {
+        if (req.userJwt.userId != userId) {
+          res.status(401).json({
+            code: 401,
+            message: 'Não Autorizada',
+            description: `As informações de autenticação necessárias estão ausentes ou não são válidas para o recurso.`,
+          });
+          return;
+        }
       }
 
       const resultFindUser = await UsersModels.getUser(userId);

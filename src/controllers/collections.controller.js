@@ -15,7 +15,7 @@ const createStatusCollect = (code) => {
       description = 'Aceita pelo Coletor';
       break;
     case 3:
-      description = 'Coleta realizada com sucesso';
+      description = 'Coleta realizada';
       break;
     case 4:
       description = 'Informações Pendentes';
@@ -64,7 +64,7 @@ class CollectController {
       dataCollect.address.neighborhood = req.body.address.neighborhood;
       dataCollect.address.city = req.body.address.city;
       dataCollect.address.state = req.body.address.state;
-      dataCollect.address.zip_code = req.body.address.zipCode;
+      dataCollect.address.zipCode = req.body.address.zipCode;
       dataCollect.collectType = req.body.collectType;
       dataCollect.collectWeight = req.body.collectWeight
         ? parseFloat(req.body.collectWeight)
@@ -121,8 +121,9 @@ class CollectController {
       let limit = parseInt(req.query.limit || 10);
       let status = req.query.status || null;
       let generatorId = req.query.generator || null;
+      let collectorId = req.query.collector || null;
 
-      let filter = { page, status, limit, generatorId };
+      let filter = { page, status, limit, generatorId, collectorId };
 
       const {
         collectList,
@@ -212,7 +213,7 @@ class CollectController {
 
       /**Finalizar a coleta */
       if (status == 3) {
-        dataCollection.collectedDate = new Date();
+        dataCollect.collectedDate = new Date();
       }
 
       dataCollect.status = createStatusCollect(status);
