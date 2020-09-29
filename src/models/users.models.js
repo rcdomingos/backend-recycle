@@ -39,8 +39,6 @@ class UsersModels {
     let project = {};
     let mysort = { name: 1 };
 
-    console.log(profile);
-
     switch (profile) {
       case 'coletor':
         query = { isCollector: true };

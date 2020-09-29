@@ -118,9 +118,6 @@ class ArticleModels {
           description: `Talves o recurso não exista ou ja foi deletado`,
         };
       }
-
-      console.log(resultDelete);
-      return;
     } catch (e) {
       logger.error(`Não foi possivel deletar o article: ${e}`, {
         label: 'MongoDb',

@@ -24,6 +24,29 @@ class FeedController {
     }
   }
 
+  /**
+   * Metodo para listar um Feed
+   */
+
+  static async apiGetFeed(req, res) {
+    try {
+      let feedId = req.params.feedId;
+      const feed = await FeedModel.getFeed(feedId);
+
+      res.status(200).json(feed);
+    } catch (e) {
+      logger.error(`${e}`, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: `Ocorreu erro na tratativa dos dados`,
+        description: `${e}`,
+      });
+    }
+  }
+
+  /**
+   * Metodo para cadastrar o Feed
+   */
   static async apiPostFeed(req, res) {
     try {
       let data = {
@@ -69,6 +92,37 @@ class FeedController {
       res.status(500).json({
         code: 500,
         message: `Ocorreu erro na tratativa dos dados`,
+        description: `${e}`,
+      });
+    }
+  }
+
+  /**
+   * Metodo para deletar o Feed
+   */
+  static async apiDeleteFeed(req, res) {
+    try {
+      let feedId = req.params.feedId;
+
+      const resultDelete = await FeedModel.deletePostFeed(feedId);
+      if (resultDelete.sucess) {
+        res.status(201).json({
+          code: 201,
+          message: `Feed Deletado com sucesso`,
+          description: `O feed foi deletado da base de dados`,
+        });
+      } else {
+        res.status(200).json({
+          code: 200,
+          message: `${resultDelete.error}`,
+          description: `${resultDelete.description}`,
+        });
+      }
+    } catch (e) {
+      logger.error(`${e}`, { label: 'Express' });
+      res.status(500).json({
+        code: 500,
+        message: `Ocorreu erro para excluir o recurso informado`,
         description: `${e}`,
       });
     }

@@ -21,6 +21,22 @@ class FeedModel {
   }
 
   /**
+   * Metodo para listar um feed pelo Id
+   */
+  static async getFeed(feedId) {
+    try {
+      const resultFind = await feeds.findOne({ _id: ObjectId(feedId) });
+      return resultFind;
+    } catch (e) {
+      logger.error(`comando insert: ${e}`, { label: 'MongoDb' });
+      return {
+        error: 'Não foi possivel buscar o registro',
+        description: ` ${e}`,
+      };
+    }
+  }
+
+  /**
    * Metodo para listar todos os feeds defaul 5
    */
   static async getAllFeed(page = 0, feedPerPage = 5) {
@@ -85,6 +101,32 @@ class FeedModel {
         { $set: dataFeed },
         { returnOriginal: false }
       );
+
+      return resultUpdateDb.value;
+    } catch (e) {
+      logger.error(`comando insert: ${e}`, { label: 'MongoDb' });
+      return {
+        error: 'Não foi possivel inserir os dados',
+        description: ` ${e}`,
+      };
+    }
+  }
+
+  /**
+   * Metodo para deletar o feed no banco
+   */
+  static async deletePostFeed(feedId) {
+    try {
+      const resultDelete = await feeds.deleteOne({ _id: ObjectId(feedId) });
+
+      if (resultDelete.deletedCount > 0) {
+        return { sucess: true };
+      } else {
+        return {
+          error: `Não foi Possivel Deletar o Feed`,
+          description: `Talves o recurso não exista ou ja foi deletado`,
+        };
+      }
 
       return resultUpdateDb.value;
     } catch (e) {

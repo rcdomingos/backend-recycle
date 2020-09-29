@@ -10,4 +10,8 @@ routes.get('/', FeedController.apiGetAllFeed);
 
 routes.put('/:feedId', FeedController.apiAlterFeed);
 
+routes.get('/:feedId', FeedController.apiGetFeed);
+
+routes.delete('/:feedId', FeedController.apiDeleteFeed);
+
 module.exports = routes;
