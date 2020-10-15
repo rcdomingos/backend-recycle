@@ -32,7 +32,7 @@ class ArticleModels {
         .skip(skip)
         .project({ title: 1, author: 1, createdDate: 1, card: 1 });
     } catch (e) {
-      console.error(`Não foi possivel realizar o comando find: ${e}`);
+      logger.error(`Não foi possivel realizar o comando find: ${e}`);
       return { articleList: [], totalNumArticle: 0 };
     }
 
@@ -43,7 +43,7 @@ class ArticleModels {
 
       return { articleList, totalNumArticle, count };
     } catch (e) {
-      console.error('Não foi possivel converter os dados ');
+      logger.error('Não foi possivel converter os dados ');
       return { articleList: [], totalNumArticle: 0 };
     }
   }

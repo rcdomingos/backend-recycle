@@ -80,8 +80,6 @@ class ArticleController {
         createdDate: new Date(),
       };
 
-      // console.log(data);
-
       const resultInsert = await ArticleModels.addArticle(data);
 
       if (!resultInsert.error) {

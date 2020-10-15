@@ -45,12 +45,15 @@ class CollectorController {
     try {
       const userIdJWT = req.userJwt.userId;
       const userNameJWT = req.userJwt.name;
+      const companyName = req.body.companyName;
       const collectionLocations = req.body.collectionLocations;
       const vehicle = req.body.vehicle;
 
       const { status } = createStatusCollector(1);
 
       let data = {
+        companyName: companyName,
+        userName: userNameJWT,
         collectionLocations: collectionLocations,
         vehicle: Array.isArray(vehicle) ? vehicle : Array(vehicle),
         createdDate: new Date(),
@@ -91,7 +94,9 @@ class CollectorController {
    */
   static async apiGetAllCollector(req, res) {
     try {
-      const collectorsList = await CollectorModels.getAllCollector();
+      let status = parseInt(req.query.status || 0);
+
+      const collectorsList = await CollectorModels.getAllCollector(status);
 
       collectorsList.map((collector) => {
         collector.Links = [

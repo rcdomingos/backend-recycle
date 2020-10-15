@@ -72,9 +72,11 @@ class CollectorModels {
    * Metodo para buscar no banco todos os documentos na coleção pre-cadastro
    */
 
-  static async getAllCollector() {
+  static async getAllCollector(status) {
     try {
-      const resultFind = await preCollector.find().toArray();
+      let query = status ? { 'status.code': status } : {};
+
+      const resultFind = await preCollector.find(query).toArray();
 
       return resultFind;
     } catch (e) {

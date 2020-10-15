@@ -196,6 +196,83 @@ class CollectModel {
       };
     }
   }
+
+  /**
+   * Metodo para pegar o total de coletas
+   */
+
+  static async getTotalCollections() {
+    try {
+      const totalCollections = await collections.countDocuments();
+      const CompletedCollections = await collections.countDocuments({
+        'status.code': 3,
+      });
+
+      return { totalCollections, CompletedCollections };
+    } catch (e) {
+      logger.error(`Erro ao executar o comando countDocuments, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para comando countDocuments`,
+        description: `${e}`,
+      };
+    }
+  }
+
+  /**
+   * Metodo para pegar o total de coletas por dia
+   */
+
+  static async getCollectionForDay(initialDay, finalDay) {
+    try {
+      let dateIni = new Date(initialDay);
+      let dateFin = new Date(finalDay);
+
+      const resultAggregate = await collections
+        .aggregate([
+          {
+            $match: {
+              createdDate: {
+                $gte: dateIni,
+                $lte: dateFin,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$createdDate' },
+              },
+              total: { $sum: 1 },
+              date: { $min: '$createdDate' },
+            },
+          },
+          { $sort: { _id: 1 } },
+          { $limit: 31 },
+          {
+            $project: {
+              total: 1,
+              date: 1,
+              day: { $dayOfMonth: '$date' },
+              month: { $month: '$date' },
+              year: { $year: '$date' },
+            },
+          },
+        ])
+        .toArray();
+
+      return resultAggregate;
+    } catch (e) {
+      logger.error(`Erro ao executar o comando aggregate, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para comando aggregate`,
+        description: `${e}`,
+      };
+    }
+  }
 }
 
 module.exports = CollectModel;

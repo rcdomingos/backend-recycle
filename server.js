@@ -16,6 +16,7 @@ const CollectRoutes = require('./src/routes/collections.routes');
 const CollectModels = require('./src/models/collections.models');
 const FeedModels = require('./src/models/feeds.model');
 const FeedRoutes = require('./src/routes/feeds.routes');
+const StatisticsRoutes = require('./src/routes/statistics.routes');
 
 logger.info(`Iniciando o servidor...`, { label: 'Express' });
 
@@ -33,6 +34,7 @@ app.use('/api/v1/articles', ArticleRoutes);
 app.use('/api/v1/collectors', CollectorRoutes);
 app.use('/api/v1/collections', CollectRoutes);
 app.use('/api/v1/feeds', FeedRoutes);
+app.use('/api/v1/statistics', StatisticsRoutes);
 
 /**Rotas staticas */
 app.use(

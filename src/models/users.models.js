@@ -361,6 +361,23 @@ class UsersModels {
       };
     }
   }
+
+  static async getTotalUsers() {
+    try {
+      const totalUsers = await users.countDocuments();
+      const totalCollectors = await users.countDocuments({ isCollector: true });
+
+      return { totalUsers, totalCollectors };
+    } catch (e) {
+      logger.error(`Erro ao executar o comando countDocuments, ${e}`, {
+        label: 'MongoDb',
+      });
+      return {
+        error: `Ocorreu um erro para comando countDocuments`,
+        description: `${e}`,
+      };
+    }
+  }
 }
 
 module.exports = UsersModels;
